@@ -153,6 +153,11 @@ I pray that this new year of your life brings you good health, endless joy, peac
         </div>
     </div>
     <audio id="bg-audio" src="audio/birthday-song.mp3" loop></audio>
+
+    <div id="music-control">
+        <button id="music-toggle" aria-label="Play background music"><i class="fa-solid fa-circle-exclamation"></i></button>
+        <input id="music-file" type="file" accept="audio/*" style="display:none">
+    </div>
 </body>
 <script>
     let datetxt = "4 July";
@@ -183,6 +188,87 @@ I pray that this new year of your life brings you good health, endless joy, peac
     if (bgAudio) {
         bgAudio.volume = 0.7;
     }
+
+    // Attempt to autoplay. If browser blocks audible autoplay, start muted and unmute on first interaction.
+    (function tryAutoplay() {
+        if (!bgAudio) return;
+        bgAudio.loop = true;
+        bgAudio.autoplay = true;
+        const playPromise = bgAudio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(() => {
+                // Try muted autoplay as a fallback
+                bgAudio.muted = true;
+                bgAudio.play().catch(() => { });
+            });
+        }
+
+        // On first user interaction, unmute and play audibly
+        function onFirstInteraction() {
+            if (!bgAudio) return;
+            try {
+                bgAudio.muted = false;
+                bgAudio.volume = 0.7;
+                bgAudio.play().catch(() => { });
+            } catch (e) { }
+            document.removeEventListener('click', onFirstInteraction);
+            document.removeEventListener('keydown', onFirstInteraction);
+        }
+
+        document.addEventListener('click', onFirstInteraction, { once: true });
+        document.addEventListener('keydown', onFirstInteraction, { once: true });
+    })();
+
+    // Music control UI
+    const musicToggle = document.getElementById('music-toggle');
+    const musicFileInput = document.getElementById('music-file');
+
+    function updateMusicButton() {
+        if (!bgAudio || !bgAudio.src) {
+            musicToggle.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+            musicToggle.title = 'No audio file. Click to select one.';
+            return;
+        }
+        musicToggle.innerHTML = bgAudio.paused ? '<i class="fa-solid fa-play"></i>' : '<i class="fa-solid fa-pause"></i>';
+        musicToggle.title = bgAudio.paused ? 'Play music' : 'Pause music';
+    }
+
+    // If the audio resource fails to load, clear src so user can pick a file
+    if (bgAudio) {
+        bgAudio.addEventListener('error', function () {
+            try { bgAudio.removeAttribute('src'); } catch (e) { }
+            updateMusicButton();
+        });
+        bgAudio.addEventListener('play', updateMusicButton);
+        bgAudio.addEventListener('pause', updateMusicButton);
+    }
+
+    musicToggle.addEventListener('click', function () {
+        if (!bgAudio) return;
+        // If there's no valid src, open file picker
+        if (!bgAudio.src) {
+            musicFileInput.click();
+            return;
+        }
+        if (bgAudio.paused) {
+            bgAudio.play().catch(() => { });
+        } else {
+            bgAudio.pause();
+        }
+    });
+
+    musicFileInput.addEventListener('change', function () {
+        const file = this.files && this.files[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        bgAudio.src = url;
+        bgAudio.loop = true;
+        bgAudio.play().catch(() => { });
+        updateMusicButton();
+    });
+
+    // initialize button state
+    updateMusicButton();
 
     letterButton.addEventListener('click', function () {
         boxmail.classList.add('active');

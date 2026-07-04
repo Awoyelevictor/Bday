@@ -797,6 +797,29 @@ body {
 
 }
 
+/* Music control */
+#music-control {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 9999;
+}
+#music-toggle{
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    border:3px solid var(--color-black);
+    background: var(--color-text-pink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    font-size:16px;
+}
+#music-toggle i{ color: #fff; }
+
+
 
 
 
